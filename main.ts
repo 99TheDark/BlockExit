@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 
 type Direction = "left" | "right";
 
-const pattern = /```([^]*?)```|`([^`]*)`|\$\$(.*?)\$\$|\$(.*?)\$/g;
+const pattern = /```([^]*?)```|`([^\n`]*)`|\$\$([^]*?)\$\$|\$(.*?)\$/g;
 
 // Maps the line number to the index
 function mapIndex(str: string): Map<number, number> {
