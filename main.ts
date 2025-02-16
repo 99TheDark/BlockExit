@@ -1,13 +1,5 @@
-import {
-	App,
-	Editor,
-	MarkdownView,
-	Modal,
-	Notice,
-	Plugin,
-	PluginSettingTab,
-	Setting,
-} from "obsidian";
+import Bimap from "bimap";
+import { Editor, Plugin } from "obsidian";
 
 // Remember to rename these classes and interfaces!
 
@@ -19,6 +11,10 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	mySetting: "default",
 };
 
+type Direction = "left" | "right";
+
+const pattern = /```([^]*?)```|`([^\n`]+)`|\$\$(.+?)\$\$|\$(.+?)\$/g;
+
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
@@ -26,25 +22,58 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addCommand({
-			id: "exit-block",
+			id: "exit-block-right",
 			name: "Exit to the right of the block",
 			hotkeys: [{ modifiers: [], key: "Escape" }],
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				const cursor = editor.getCursor();
-				const line = editor.getLine(cursor.line);
-
-				// TODO: Add code blocks
-				const matches = line.matchAll(/\$\$(.+?)\$\$|\$(.+?)\$/g);
-				if (!matches) return;
-
-				for (const match of matches) {
-					const end = match.index + match[0].length;
-					if (match.index < cursor.ch && cursor.ch < end) {
-						editor.setCursor(cursor.line, end);
-					}
-				}
-			},
+			editorCallback: (editor, _) => this.exitBlock(editor, "right"),
 		});
+
+		this.addCommand({
+			id: "exit-block-left",
+			name: "Exit to the left of the block",
+			hotkeys: [{ modifiers: ["Shift"], key: "Escape" }],
+			editorCallback: (editor, _) => this.exitBlock(editor, "left"),
+		});
+	}
+
+	exitBlock(editor: Editor, direction: Direction) {
+		const cursor = editor.getCursor();
+		const note = editor.getValue();
+		// const line = editor.getLine(cursor.line);
+
+		const indexMap = this.mapIndex(note);
+
+		const cursorIndex = indexMap.getFor(cursor.line)! + cursor.ch;
+
+		const matches = note.matchAll(pattern);
+		if (!matches) return;
+
+		for (const match of matches) {
+			const end = match.index + match[0].length;
+			if (match.index < cursorIndex && cursorIndex < end) {
+				if (direction == "left") {
+					// editor.setCursor(cursor.line, match.index);
+				} else {
+					// editor.setCursor(cursor.line, end);
+				}
+			}
+		}
+	}
+
+	// Maps the line number to the index
+	mapIndex(str: string): Bimap<number, number> {
+		const bimap = new Bimap<number, number>();
+
+		let lineNum = 0;
+		bimap.setFor(0, 0);
+		[...str].forEach((ch, i) => {
+			if (ch == "\n") {
+				bimap.setFor(lineNum + 1, i);
+				lineNum++;
+			}
+		});
+
+		return bimap;
 	}
 
 	onunload() {}
