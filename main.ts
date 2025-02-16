@@ -1,4 +1,3 @@
-import Bimap from "bimap";
 import { Editor, Plugin } from "obsidian";
 
 // Remember to rename these classes and interfaces!
@@ -13,7 +12,44 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 
 type Direction = "left" | "right";
 
-const pattern = /```([^]*?)```|`([^\n`]+)`|\$\$(.+?)\$\$|\$(.+?)\$/g;
+const pattern = /```([^]*?)```|`([^`]*)`|\$\$(.*?)\$\$|\$(.*?)\$/g;
+
+// Maps the line number to the index
+function mapIndex(str: string): Map<number, number> {
+	const lineIndexMap = new Map<number, number>();
+	lineIndexMap.set(0, 0);
+
+	let lineNum = 0;
+	[...str].forEach((ch, i) => {
+		if (ch == "\n") {
+			lineIndexMap.set(lineNum + 1, i + 1);
+			lineNum++;
+		}
+	});
+
+	lineIndexMap.set(lineIndexMap.size, str.length);
+	return lineIndexMap;
+}
+
+function findFloorIndex(arr: number[], target: number): number | undefined {
+	let left = 0;
+	let right = arr.length - 1;
+
+	let result;
+
+	while (left <= right) {
+		const mid = ~~((left + right) / 2);
+
+		if (arr[mid] <= target) {
+			result = mid;
+			left = mid + 1;
+		} else {
+			right = mid - 1;
+		}
+	}
+
+	return result;
+}
 
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
@@ -39,41 +75,28 @@ export default class MyPlugin extends Plugin {
 	exitBlock(editor: Editor, direction: Direction) {
 		const cursor = editor.getCursor();
 		const note = editor.getValue();
-		// const line = editor.getLine(cursor.line);
 
-		const indexMap = this.mapIndex(note);
+		const indexMap = mapIndex(note);
 
-		const cursorIndex = indexMap.getFor(cursor.line)! + cursor.ch;
+		const cursorIndex = indexMap.get(cursor.line)! + cursor.ch;
 
 		const matches = note.matchAll(pattern);
 		if (!matches) return;
 
 		for (const match of matches) {
 			const end = match.index + match[0].length;
-			if (match.index < cursorIndex && cursorIndex < end) {
+			if (match.index <= cursorIndex && cursorIndex <= end) {
+				const lineIndices = [...indexMap.values()];
 				if (direction == "left") {
-					// editor.setCursor(cursor.line, match.index);
+					const line = findFloorIndex(lineIndices, match.index)!;
+					editor.setCursor(line, match.index - indexMap.get(line)!);
 				} else {
-					// editor.setCursor(cursor.line, end);
+					const line = findFloorIndex(lineIndices, end)!;
+					editor.setCursor(line, end - indexMap.get(line)!);
 				}
+				break;
 			}
 		}
-	}
-
-	// Maps the line number to the index
-	mapIndex(str: string): Bimap<number, number> {
-		const bimap = new Bimap<number, number>();
-
-		let lineNum = 0;
-		bimap.setFor(0, 0);
-		[...str].forEach((ch, i) => {
-			if (ch == "\n") {
-				bimap.setFor(lineNum + 1, i);
-				lineNum++;
-			}
-		});
-
-		return bimap;
 	}
 
 	onunload() {}
