@@ -3,9 +3,9 @@
   "name": "Block Exit",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "Demonstrates some of the capabilities of the Obsidian API.",
+  "description": "Allows quick left/right exiting of code and math blocks.",
   "author": "Obsidian",
   "authorUrl": "https://obsidian.md",
   "fundingUrl": "https://obsidian.md/pricing",
-  "isDesktopOnly": false
+  "isDesktopOnly": true
 }

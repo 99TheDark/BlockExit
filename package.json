@@ -1,7 +1,7 @@
 {
   "name": "obsidian-block-exit",
   "version": "1.0.0",
-  "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+  "description": "Allows quick left/right exiting of code and math blocks.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
