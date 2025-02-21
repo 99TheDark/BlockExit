@@ -1,7 +1,5 @@
 import { Editor, Plugin } from "obsidian";
 
-// Remember to rename these classes and interfaces!
-
 interface MyPluginSettings {
 	mySetting: string;
 }
